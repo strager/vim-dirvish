@@ -40,22 +40,10 @@ function! s:parent_dir(dir) abort
   return s:normalize_dir(fnamemodify(a:dir, mod), 0)
 endfunction
 
-if v:version > 703
-function! s:globlist(pat) abort
-  return glob(a:pat, !s:suf(), 1)
-endfunction
-else "Vim 7.3 glob() cannot handle filenames containing newlines.
-function! s:globlist(pat) abort
-  return split(glob(a:pat, !s:suf()), "\n")
-endfunction
-endif
-
 function! s:list_dir(dir) abort
-  " Escape for glob().
-  let dir_esc = substitute(a:dir,'\V[','[[]','g')
-  let paths = s:globlist(dir_esc.'*')
-  "Append dot-prefixed files. glob() cannot do both in 1 pass.
-  let paths = paths + s:globlist(dir_esc.'.[^.]*')
+  let paths = strager#file#list_directory(a:dir)
+  call filter(paths, {_, path -> path !=# '.' && path !=# '..'})
+  call map(paths, {_, path -> strager#path#join([a:dir, path])})
 
   if get(g:, 'dirvish_relative_paths', 0)
       \ && a:dir != s:parent_dir(getcwd()) "avoid blank CWD
